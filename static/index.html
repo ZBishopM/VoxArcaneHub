@@ -1,32 +1,114 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoxArcane Hub | AI Transcription</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        body { background: #11111b; color: #cdd6f4; } /* Colores estilo Linux Hyprland */
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
+        body {
+            background: radial-gradient(circle at top left, #1e1e2e, #11111b);
+            color: #cdd6f4;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .hypr-card {
+            background: rgba(49, 50, 68, 0.3);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(205, 214, 244, 0.1);
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+        .glow-border:hover {
+            border: 1px solid #cba6f7;
+            box-shadow: 0 0 15px rgba(203, 166, 247, 0.3);
+            transition: all 0.3s ease;
         }
     </style>
 </head>
-<body class="flex items-center justify-center h-screen">
-    <div class="glass p-8 shadow-2xl">
-        <h1 class="text-3xl font-bold mb-4 text-purple-400">VoxArcane Hub</h1>
-        <p class="mb-6">Sube tu audio para doblaje o transcripción.</p>
-        <button onclick="llamarBackend()" class="bg-purple-600 hover:bg-purple-500 transition-all px-4 py-2 rounded-lg font-bold">
-            Probar Motor IA
-        </button>
-        <div id="resultado" class="mt-4 text-green-400"></div>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div id="status-bar" class="hypr-card px-4 py-2 mb-8 flex items-center gap-4 text-sm opacity-0">
+        <span class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+            RTX 4070 Super Active
+        </span>
+        <span id="vram-info" class="text-slate-400">Cargando hardware...</span>
     </div>
 
+    <main class="hypr-card p-8 w-full max-auto max-w-2xl opacity-0" id="main-container">
+        <h1 class="text-4xl font-extrabold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            VoxArcane Hub
+        </h1>
+        <p class="text-slate-400 mb-8 italic">IA-Powered Transcription for Voice Actors</p>
+
+        <div class="border-2 border-dashed border-slate-600 rounded-xl p-10 text-center glow-border cursor-pointer transition-all" id="dropzone">
+            <input type="file" id="fileInput" class="hidden" accept="audio/*">
+            <div id="upload-text">
+                <p class="text-lg">Suelta tu audio aquí o <span class="text-purple-400 font-bold">explora</span></p>
+                <p class="text-sm text-slate-500 mt-2">WAV, MP3, M4A (Max 25MB)</p>
+            </div>
+            <div id="loading" class="hidden flex-col items-center">
+                <div class="w-10 h-10 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                <p class="mt-4 text-purple-400 font-medium">Transcribiendo audio...</p>
+            </div>
+        </div>
+
+        <div id="result-area" class="mt-8 hidden">
+            <h3 class="text-sm uppercase tracking-widest text-slate-500 mb-2">Transcripción</h3>
+            <div class="bg-[#181825] p-4 rounded-lg border border-slate-700 max-h-60 overflow-y-auto">
+                <p id="transcription-text" class="leading-relaxed text-slate-200"></p>
+            </div>
+        </div>
+    </main>
+
     <script>
-        async function llamarBackend() {
-            const res = await fetch('http://127.0.0.1:8000/procesar-audio?nombre_archivo=demo.wav');
+        // Animacion de entrada
+        window.onload = () => {
+            gsap.to("#status-bar", { opacity: 1, y: 10, duration: 1, ease: "power4.out" });
+            gsap.to("#main-container", { opacity: 1, y: 0, duration: 1.2, delay: 0.3, ease: "power4.out" });
+            actualizarHardware();
+        };
+
+        const fileInput = document.getElementById('fileInput');
+        const dropzone = document.getElementById('dropzone');
+
+        dropzone.onclick = () => fileInput.click();
+
+        fileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // UI Feedback
+            document.getElementById('upload-text').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/upload-audio', { method: 'POST', body: formData });
+                const data = await response.json();
+                
+                // Mostrar resultado
+                document.getElementById('result-area').classList.remove('hidden');
+                document.getElementById('transcription-text').innerText = data.transcripcion.texto;
+                
+                // Animación de aparición del texto
+                gsap.from("#result-area", { opacity: 0, y: 20, duration: 0.5 });
+            } catch (error) {
+                alert("Error al procesar el audio");
+            } finally {
+                document.getElementById('upload-text').classList.remove('hidden');
+                document.getElementById('loading').classList.add('hidden');
+            }
+        };
+
+        async function actualizarHardware() {
+            const res = await fetch('/status');
             const data = await res.json();
-            document.getElementById('resultado').innerText = "Respuesta: " + data.motor_ia;
+            document.getElementById('vram-info').innerText = `${data.modelo} | VRAM Libre: ${data.vram_libre}`;
         }
     </script>
 </body>
