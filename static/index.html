@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #11111b; color: #cdd6f4; } /* Colores estilo Linux Hyprland */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center h-screen">
+    <div class="glass p-8 shadow-2xl">
+        <h1 class="text-3xl font-bold mb-4 text-purple-400">VoxArcane Hub</h1>
+        <p class="mb-6">Sube tu audio para doblaje o transcripción.</p>
+        <button onclick="llamarBackend()" class="bg-purple-600 hover:bg-purple-500 transition-all px-4 py-2 rounded-lg font-bold">
+            Probar Motor IA
+        </button>
+        <div id="resultado" class="mt-4 text-green-400"></div>
+    </div>
+
+    <script>
+        async function llamarBackend() {
+            const res = await fetch('http://127.0.0.1:8000/procesar-audio?nombre_archivo=demo.wav');
+            const data = await res.json();
+            document.getElementById('resultado').innerText = "Respuesta: " + data.motor_ia;
+        }
+    </script>
+</body>
+</html>
