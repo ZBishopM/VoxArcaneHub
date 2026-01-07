@@ -32,7 +32,7 @@
     <div id="status-bar" class="hypr-card px-4 py-2 mb-8 flex items-center gap-4 text-sm opacity-0">
         <span class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-            RTX 4070 Super Active
+            GPU powered
         </span>
         <span id="vram-info" class="text-slate-400">Cargando hardware...</span>
     </div>
@@ -61,6 +61,28 @@
                 <p id="transcription-text" class="leading-relaxed text-slate-200"></p>
             </div>
         </div>
+
+        <div id="history-section" class="mt-10 w-full hidden opacity-0">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-slate-200">Historial de Procesamiento</h2>
+                <span class="text-xs bg-purple-900 text-purple-200 px-2 py-1 rounded border border-purple-500/30">Actualizado</span>
+            </div>
+
+            <div class="overflow-hidden rounded-lg border border-slate-700 bg-[#1e1e2e]/50 backdrop-blur-sm">
+                <table class="w-full text-left text-sm text-slate-400">
+                    <thead class="bg-black/20 text-xs uppercase font-medium text-purple-400">
+                        <tr>
+                            <th class="px-4 py-3">ID</th>
+                            <th class="px-4 py-3">Archivo</th>
+                            <th class="px-4 py-3">Tiempo (GPU)</th>
+                            <th class="px-4 py-3">Idioma</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-list" class="divide-y divide-slate-700/50">
+                        </tbody>
+                </table>
+            </div>
+        </div>
     </main>
 
     <script>
@@ -69,6 +91,7 @@
             gsap.to("#status-bar", { opacity: 1, y: 10, duration: 1, ease: "power4.out" });
             gsap.to("#main-container", { opacity: 1, y: 0, duration: 1.2, delay: 0.3, ease: "power4.out" });
             actualizarHardware();
+            cargarHistorial();
         };
 
         const fileInput = document.getElementById('fileInput');
@@ -95,6 +118,8 @@
                 document.getElementById('result-area').classList.remove('hidden');
                 document.getElementById('transcription-text').innerText = data.transcripcion.texto;
                 
+                cargarHistorial();
+
                 // Animación de aparición del texto
                 gsap.from("#result-area", { opacity: 0, y: 20, duration: 0.5 });
             } catch (error) {
@@ -110,6 +135,46 @@
             const data = await res.json();
             document.getElementById('vram-info').innerText = `${data.modelo} | VRAM Libre: ${data.vram_libre}`;
         }
+
+        async function cargarHistorial() {
+            try {
+                const res = await fetch('/historial');
+                const grabaciones = await res.json();
+
+                const lista = document.getElementById('history-list');
+                lista.innerHTML = ''; // Limpiar lista actual
+            
+                if (grabaciones.length > 0) {
+                    document.getElementById('history-section').classList.remove('hidden');
+
+                    // Animación de entrada para la sección
+                    gsap.to("#history-section", { opacity: 1, duration: 0.5 });
+                }
+            
+                grabaciones.forEach((g, index) => {
+                    const row = `
+                        <tr class="hover:bg-white/5 transition-colors cursor-default group">
+                            <td class="px-4 py-3 font-mono text-slate-500">#${g.id}</td>
+                            <td class="px-4 py-3 font-medium text-white group-hover:text-purple-300 transition-colors">${g.filename}</td>
+                            <td class="px-4 py-3 text-green-400 font-mono">${g.duracion_proceso || 'N/A'}</td>
+                            <td class="px-4 py-3 uppercase text-xs tracking-wider">${g.idioma}</td>
+                        </tr>
+                    `;
+                    lista.innerHTML += row;
+                });
+            
+                // Animación "stagger" (efecto cascada tipo Hyprland) para las filas
+                gsap.from("#history-list tr", { 
+                    opacity: 0, 
+                    x: -20, 
+                    duration: 0.4, 
+                    stagger: 0.1 
+                });
+            
+            } catch (error) {
+                console.error("Error cargando historial:", error);
+            }
+        }        
     </script>
 </body>
 </html>
