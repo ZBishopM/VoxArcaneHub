@@ -12,4 +12,4 @@ models/
 *.onnx
 
 # archivos temporales
-temp_uploads/
+temp_uploads/*.db
