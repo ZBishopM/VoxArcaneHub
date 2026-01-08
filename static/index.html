@@ -11,7 +11,9 @@
             background: radial-gradient(circle at top left, #1e1e2e, #11111b);
             color: #cdd6f4;
             font-family: 'Inter', sans-serif;
-            overflow: hidden;
+            /* Permitir scroll vertical y suavizarlo en iOS */
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; 
         }
         .hypr-card {
             background: rgba(49, 50, 68, 0.3);
@@ -68,7 +70,7 @@
                 <span class="text-xs bg-purple-900 text-purple-200 px-2 py-1 rounded border border-purple-500/30">Actualizado</span>
             </div>
 
-            <div class="overflow-hidden rounded-lg border border-slate-700 bg-[#1e1e2e]/50 backdrop-blur-sm">
+            <div class="overflow-x-auto overflow-y-auto max-h-64 rounded-lg border border-slate-700 bg-[#1e1e2e]/50 backdrop-blur-sm">
                 <table class="w-full text-left text-sm text-slate-400">
                     <thead class="bg-black/20 text-xs uppercase font-medium text-purple-400">
                         <tr>
@@ -123,6 +125,8 @@
                 // Animación de aparición del texto
                 gsap.from("#result-area", { opacity: 0, y: 20, duration: 0.5 });
             } catch (error) {
+                // 4. MANEJO DE ERROR VISUAL
+                console.error("Hubo un error:", error);
                 alert("Error al procesar el audio");
             } finally {
                 document.getElementById('upload-text').classList.remove('hidden');
